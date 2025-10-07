@@ -3,25 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import { Vault } from "@/lib/vault";
 import jwt from "jsonwebtoken";
 
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
-  try {
-    await connectDB();
-    const token = req.headers.get("authorization")?.split(" ")[1];
-    if (!token)
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-    const { id } = context.params;
-
-    const item = await Vault.findOne({ _id: id, userId: decoded.id });
-    if (!item) return NextResponse.json({ message: "Not found" }, { status: 404 });
-
-    return NextResponse.json(item, { status: 200 });
-  } catch (err) {
-    console.error("Vault GET error:", err);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
-  }
-}
 
 export async function PUT(req: NextRequest, context: { params: { id: string } }) {
   try {
