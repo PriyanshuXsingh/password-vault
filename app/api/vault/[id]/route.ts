@@ -1,0 +1,59 @@
+import { NextResponse } from "next/server";
+import { connectDB } from "@/lib/mongodb";
+import { Vault } from "@/lib/vault";
+import jwt from "jsonwebtoken";
+
+export async function GET(req: Request, { params }: { params: { id: string } }) {
+  try {
+    await connectDB();
+    const token = req.headers.get("authorization")?.split(" ")[1];
+    if (!token) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const item = await Vault.findOne({ _id: params.id, userId: decoded.id });
+
+    if (!item) return NextResponse.json({ message: "Not found" }, { status: 404 });
+    return NextResponse.json(item, { status: 200 });
+  } catch (err: any) {
+    console.error("Vault GET error:", err);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request, { params }: { params: { id: string } }) {
+  try {
+    await connectDB();
+    const token = req.headers.get("authorization")?.split(" ")[1];
+    if (!token) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const data = await req.json();
+
+    const updated = await Vault.findOneAndUpdate(
+      { _id: params.id, userId: decoded.id },
+      data,
+      { new: true }
+    );
+
+    return NextResponse.json(updated, { status: 200 });
+  } catch (err: any) {
+    console.error("Vault PUT error:", err);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  try {
+    await connectDB();
+    const token = req.headers.get("authorization")?.split(" ")[1];
+    if (!token) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    await Vault.findOneAndDelete({ _id: params.id, userId: decoded.id });
+
+    return NextResponse.json({ message: "Deleted successfully" }, { status: 200 });
+  } catch (err: any) {
+    console.error("Vault DELETE error:", err);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+  }
+}
